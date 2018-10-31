@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.button_minimize = new System.Windows.Forms.Button();
             this.button_exit = new System.Windows.Forms.Button();
             this.button_about = new System.Windows.Forms.Button();
@@ -43,6 +44,7 @@
             this.textBox_speech = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.listBox_IMs = new System.Windows.Forms.ListBox();
+            this.timer_paint = new System.Windows.Forms.Timer(this.components);
             this.panel1.SuspendLayout();
             this.panel_file.SuspendLayout();
             this.panel_synth.SuspendLayout();
@@ -156,8 +158,6 @@
             this.panel_file.Name = "panel_file";
             this.panel_file.Size = new System.Drawing.Size(361, 75);
             this.panel_file.TabIndex = 2;
-            this.panel_file.DragDrop += new System.Windows.Forms.DragEventHandler(this.panel_file_DragDrop);
-            this.panel_file.DragEnter += new System.Windows.Forms.DragEventHandler(this.panel_file_DragEnter);
             // 
             // button_ChooseFileAndSend
             // 
@@ -170,8 +170,6 @@
             this.button_ChooseFileAndSend.Text = "Выбрать файл и отправить";
             this.button_ChooseFileAndSend.UseVisualStyleBackColor = true;
             this.button_ChooseFileAndSend.Click += new System.EventHandler(this.button_ChooseFileAndSend_Click);
-            this.button_ChooseFileAndSend.DragDrop += new System.Windows.Forms.DragEventHandler(this.panel_file_DragDrop);
-            this.button_ChooseFileAndSend.DragEnter += new System.Windows.Forms.DragEventHandler(this.panel_file_DragEnter);
             // 
             // panel_synth
             // 
@@ -229,8 +227,15 @@
             this.listBox_IMs.TabIndex = 0;
             this.listBox_IMs.SelectedIndexChanged += new System.EventHandler(this.listBox_IMs_SelectedIndexChanged);
             // 
+            // timer_paint
+            // 
+            this.timer_paint.Enabled = true;
+            this.timer_paint.Interval = 20;
+            this.timer_paint.Tick += new System.EventHandler(this.timer_paint_Tick);
+            // 
             // Form1
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
@@ -245,6 +250,8 @@
             this.Controls.Add(this.button_about);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = global::FVM_VK.Properties.Resources.VK_Logo;
+            this.MaximizeBox = false;
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -256,7 +263,7 @@
             this.panel_synth.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
-            this.Icon = global::FVM_VK.Properties.Resources.VK_Logo;
+
         }
 
         #endregion
@@ -276,6 +283,7 @@
         private System.Windows.Forms.Button button_speechsend;
         private System.Windows.Forms.TextBox textBox_speech;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Timer timer_paint;
     }
 }
 

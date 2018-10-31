@@ -32,9 +32,14 @@ namespace FVM_VK
             string version = "5.70";
             string url = api_url + METHOD_NAME + "?" + PARAMETERS + "&access_token=" + access_token + "&v=" + version;
 
-            Thread.Sleep(30);
+            string resp = GetResponse(url);
+            if (resp.Contains("\"error_msg\":\"Too many requests per second\""))
+            {
+                Thread.Sleep(1000);
+                return VKRequest(access_token, METHOD_NAME, PARAMETERS);
+            }
 
-            return GetResponse(url);
+            return resp;
         }
         #endregion
         #region UploadMultipart

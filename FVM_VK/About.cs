@@ -11,10 +11,12 @@ public partial class About : Form
     public About()
     {
         InitializeComponent();
+        TopMost = true;
+        PosY = Height * -1;
+        pos = Height * -1;
     }
 
     #region Методы доступа к атрибутам сборки
-
     public string AssemblyTitle
     {
         get
@@ -93,35 +95,27 @@ public partial class About : Form
     }
     #endregion
 
-
-    private Thread th, th2, th3;
     private void About_Load(object sender, EventArgs e)
     {
         label_soft.Text = $"{AssemblyTitle} {AssemblyVersion}";
-
-        th = new Thread(Anim);
-        th2 = new Thread(Timer);
-        th3 = new Thread(refresh);
-        th.Start();
-        th2.Start();
-        th3.Start();
     }
 
     #region Анимация при запуске
-    private void Anim()
+    float pos = 0f;
+    private void timer_about_Tick(object sender, EventArgs e)
     {
-        PosY = Height * -1;
-        float pos = Height * -1;
-        while (PosY < 0)
+        if (PosY < 0)
         {
             if (pos > -1f)
                 pos = 0f;
             else
                 pos -= pos / 15f;
             PosY = pos;
-            Application.DoEvents();
-            Thread.Sleep(10);
         }
+        Invoke((MethodInvoker)delegate ()
+        {
+            Refresh();
+        });
     }
     private float PosY
     {
@@ -143,74 +137,45 @@ public partial class About : Form
     #endregion
     #region выход по истечении времени
     private int wait = 0;
-    private void Timer()
+    private void timer_close_Tick(object sender, EventArgs e)
     {
-        while (wait < 40 * 10)
+        wait++;
+        if (wait >= 40 * 10)
         {
-            Thread.Sleep(25);
-            wait++;
+            close();
         }
-        close();
     }
     #endregion
-
-    private void refresh()
-    {
-        while (true)
-        {
-            Invoke((MethodInvoker)delegate ()
-            {
-                Refresh();
-            });
-        }
-    }
 
     private void linkLabel_antim_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
         Process.Start("https://github.com/antimYT");
     }
 
+    #region button_close
     private void close()
     {
         Invoke((MethodInvoker)delegate ()
         {
-            if (th.IsAlive)
-                th.Suspend();
-            if (th2.IsAlive)
-                th2.Suspend();
-            if (th3.IsAlive)
-                th3.Suspend();
             this.Close();
             this.Dispose();
         });
 
     }
-
+    
     private void button_close_Click(object sender, EventArgs e)
     {
         close();
     }
+    #endregion
+    
 
+    
 
     private void About_Paint(object sender, PaintEventArgs e)
     {
         e.Graphics.DrawRectangle(new Pen(Color.FromArgb(39, 111, 169)), 0f, 0f, Width - 1, Height - 1);
 
-        for (int i = 0; i < 3; i++)
-        {
-            e.Graphics.DrawLine(new Pen(Color.FromArgb(39, 111, 169)), 1f, Height - 2 - i, Width - (Width / (40f * 10f) * wait - 1f), Height - 2 - i);
-        }
-
-        //Refresh();
-    }
-
-    protected override void WndProc(ref Message m)
-    {
-        if (m.Msg == 0x84)
-        {
-            m.Result = (IntPtr)2;  // move
-            return;
-        }
-        base.WndProc(ref m);
+        e.Graphics.DrawLine(new Pen(Color.FromArgb(39, 111, 169), 3), 1f, Height - 3, Width - (Width / (40f * 10f) * wait - 1f), Height - 3);
     }
 }

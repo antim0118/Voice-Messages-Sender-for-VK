@@ -42,6 +42,7 @@ namespace FVM_VK
             }
         }
 
+        float drawpbar = 0f;
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
             if (FormIsActive)
@@ -51,46 +52,48 @@ namespace FVM_VK
 
             if (tokennotvalid)
                 e.Graphics.DrawRectangle(new Pen(Color.FromArgb(213, 0, 0)), textBox_token.Location.X - 1, textBox_token.Location.Y - 1, textBox_token.Width + 1, textBox_token.Height + 1);
+
+            if (progress > drawpbar)
+                drawpbar += (progress - drawpbar) / 30f;
+            else if (progress < drawpbar)
+                drawpbar += (progress - drawpbar) / 5f;
+            if (drawpbar >= 99.5)
+                drawpbar = 100;
+            if (drawpbar <= 0.5)
+                drawpbar = 0;
+            //progress bar
+            e.Graphics.DrawLine(new Pen(Color.FromArgb(39, 111, 169), 3), 1, Height - 3, Width / 100f * drawpbar - 1, Height - 3);
         }
         #endregion
-        #region Threads
-        private int _t_ = 0;
+        #region Timers
         private bool tokennotvalid = false;
-        private void Updater()
+        private void timer_paint_Tick(object sender, EventArgs e)
         {
-            while (true)
+            Invoke((MethodInvoker)delegate ()
             {
-                Thread.Sleep(100);
-                Invoke((MethodInvoker)delegate ()
-                {
-                    Refresh();
-                });
-            }
+                Refresh();
+            });
         }
         #endregion
         #region Form1_Load
-        private Thread updater;
         private void Form1_Load(object sender, EventArgs e)
         {
-            updater = new Thread(Updater);
-            updater.Start();
+			//уже поздно убирать этот метод, т.к. корректирую исходник перед загрузкой
         }
         #endregion
         #region Exit
         private void Exit()
         {
-            if (updater.IsAlive)
-                updater.Suspend();
             Environment.Exit(Environment.ExitCode);
         }
         #endregion
-
+        #region Button <ABOUT>
         private void button_about_Click(object sender, EventArgs e)
         {
             About frm = new About();
             frm.Show();
         }
-
+        #endregion
         #region Control buttons (exit and minimize)
         private void button_exit_Click(object sender, EventArgs e)
         {
@@ -112,7 +115,7 @@ namespace FVM_VK
         #region button_GetAccessToken_Click
         private void button_getaccesstoken_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Сейчас будет открыт сайт в браузере.\n\nРекомендуем выбрать \"VK API\"\n(возможно и остальные подойдут, но тестировалось на нем)");
+            MessageBox.Show("Сейчас будет открыт сайт в браузере.\n\nРекомендуем выбрать \"VK API\"\n(возможно и остальные подойдут, но тестировалось только на нем)");
             Process.Start("https://vkhost.github.io/");
         }
         #endregion
@@ -204,7 +207,6 @@ namespace FVM_VK
                     if (id != 0 && id > 0)
                         ds.Add(new Dialog(id, ""));
                 }
-                Thread.Sleep(200);
             }
 
             foreach (var dd in ds)
@@ -222,7 +224,6 @@ namespace FVM_VK
                 {
                     Id = id;
                     var nr = mm.VKRequest(Program.form1.Token, "users.get", $"user_ids={id}");
-                    //MessageBox.Show(nr);
                     string name = nr.Split(new string[] { "\"first_name\":\"" }, StringSplitOptions.None)[1].Split('"')[0].Replace("\",", "");
                     string lname = nr.Split(new string[] { "\"last_name\":\"" }, StringSplitOptions.None)[1].Split('"')[0].Replace("\",", "");
                     Title = $"{name} {lname}";
@@ -249,7 +250,9 @@ namespace FVM_VK
             OPF.Filter = "MP3|*.mp3|Waveform Audio File|*.wav|OGG|*.ogg";
             if (OPF.ShowDialog() == DialogResult.OK)
             {
-                SendAudio(OPF.FileName);
+                //создаем новый поток, чтобы не было подвисаний
+                Thread th = new Thread(() => SendAudio(OPF.FileName));
+                th.Start();
             }
         }
 
@@ -268,7 +271,6 @@ namespace FVM_VK
             {
                 Thread.Sleep(10);
             }
-            Thread.Sleep(1000);
 
             return output;
         }
@@ -292,58 +294,64 @@ namespace FVM_VK
             m_SoundPlayer.Stop();
         }
         #endregion
-
         #region SendAudio
+        float progress = 0f;
+        bool SendInProgress = false;
         public void SendAudio(string path)
         {
+            Invoke((MethodInvoker)delegate ()
+            {
+                button_ChooseFileAndSend.Enabled = false;
+                button_speechsend.Enabled = false;
+            });
+            if (SendInProgress)
+            {
+                SystemSounds.Exclamation.Play();
+                return;
+            }
+            SendInProgress = true;
+            progress = 0f; //немного щиткодинга, чтобы симулировать прогресс загрузки (хотя она и так загружается)
             int id = Convert.ToInt32(mm.VKRequest(Token, "users.get").Split(new string[] { "\"id\":" }, StringSplitOptions.None)[1].Split(',')[0]);
-
+            progress = 12f;
             string _url_multipart = mm.VKRequest(Token, "docs.getMessagesUploadServer", "type=audio_message&peer_id=" + id); //запрос ссылки на загрузку
+            progress = 24f;
             string url_multipart = _url_multipart.Split(new string[] { "upload_url" }, StringSplitOptions.None)[1].Split('"')[2].Replace(@"\", ""); //чистим запрос, получаем "чистую" ссылку
+            progress = 36f;
             string filevk = mm.UploadMultipart(url_multipart, path, Path.GetExtension(path)).Split('"')[3].Split('"')[0]; //загружаем файл и получаем ссылку на файл
-
-            string res = mm.VKRequest(Token, "docs.save", $"file={filevk}"); //сохраняем файл как документ (его не видно в общем списке)
-
-
-            string owner_id = res.Split(new string[] { "owner_id" }, StringSplitOptions.None)[1].Split(',')[0].Split(':')[1]; //получаем твой id
-            string media_id = res.Split(new string[] { "id" }, StringSplitOptions.None)[1].Split(',')[0].Split(':')[1]; //получаем номер документа с голосовухой
-            int dialog = Convert.ToInt32(listBox_IMs.SelectedItem.ToString().Split(':')[1]);
-
-            //отправляем сообщение
-            string sendRes = mm.VKRequest(Token, "messages.send", $"peer_id={dialog}&attachment=doc{owner_id}_{media_id}");
-
+            progress = 48f;
+            if (!filevk.ToLower().Contains("empty_file"))
+            {
+                string res = mm.VKRequest(Token, "docs.save", $"file={filevk}"); //сохраняем файл как документ (его не видно в общем списке)
+                progress = 60f;
+                string owner_id = res.Split(new string[] { "owner_id" }, StringSplitOptions.None)[1].Split(',')[0].Split(':')[1]; //получаем твой id
+                progress = 72f;
+                string media_id = res.Split(new string[] { "id" }, StringSplitOptions.None)[1].Split(',')[0].Split(':')[1]; //получаем номер документа-голосового сообщения
+                progress = 84f;
+                Invoke((MethodInvoker)delegate ()
+                {
+                    int dialog = Convert.ToInt32(listBox_IMs.SelectedItem.ToString().Split(':')[1]);
+                    progress = 96f;
+                //отправляем сообщение
+                string sendRes = mm.VKRequest(Token, "messages.send", $"peer_id={dialog}&attachment=doc{owner_id}_{media_id}");
+                });
+            }
+            Invoke((MethodInvoker)delegate ()
+            {
+                button_ChooseFileAndSend.Enabled = true;
+                button_speechsend.Enabled = true;
+            });
+            progress = 100f;
             SystemSounds.Exclamation.Play();
+            SendInProgress = false;
         }
         #endregion
-
+        #region Button_speechsend
         private void button_speechsend_Click(object sender, EventArgs e)
         {
             string wav = SpeakToWav(textBox_speech.Text);
-            SendAudio(wav);
-        }
-
-        #region drag and drop
-        private void panel_file_DragDrop(object sender, DragEventArgs e)
-        {
-            string[] FileList = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            foreach (string file in FileList)
-            {
-                if (FileList.Length > 1)
-                    Thread.Sleep(3000);
-                SendAudio(file);
-            }
-           
-        }
-
-        private void panel_file_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.Text))
-                e.Effect = DragDropEffects.Copy;
-            else
-                e.Effect = DragDropEffects.None;
+            Thread th = new Thread(() => SendAudio(wav));
+            th.Start();
         }
         #endregion
-
-
     }
 }
