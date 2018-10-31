@@ -1,4 +1,4 @@
-# Фейковые голосовые сообщения для VK.com v.2.1
+# Фейковые голосовые сообщения для VK.com v.2.2
 ![ICON](https://raw.githubusercontent.com/antimYT/Fake-Voice-Messages-for-VK/master/_icon/VK_Logo.png)
 
 Отправка голосовых сообщений, используя аудио файл или синтезатор голоса (говорилку)
