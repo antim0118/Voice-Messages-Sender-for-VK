@@ -3,7 +3,7 @@
 
 Отправка голосовых сообщений, используя аудио файл или синтезатор голоса (говорилку)
 
-[Скомпилированная версия (.exe)](https://github.com/antimYT/Fake-Voice-Messages-for-VK/blob/master/FVM.exe?raw=true) [327KB]
+[Скачать](https://github.com/antimYT/Fake-Voice-Messages-for-VK/releases) [320KB-330KB]
 
 ![Main window](https://raw.githubusercontent.com/antimYT/Fake-Voice-Messages-for-VK/master/preview.png)
 
